@@ -67,7 +67,6 @@ const RANGE_MAP = { "7d": 7, "30d": 30, "90d": 90 };
 const MOCK = {
   channel: { name: "nayabnb", platform: "Twitch", stage: "成長期中段", core: "陪伴型互動＋主力遊戲", oneLiner: "目前不是流量問題，而是成長結構尚未爆發。" },
   kpis: {
-    subGrowthRate: { value: 0.18, label: "訂閱成長率", unit: "MoM" },
     avgConcurrent: { value: 315, label: "歷史平均觀看", unit: "ACV" }, // 預設值
     retentionProxy: { value: 0.56, label: "黏著指標", unit: "Proxy" },
     chatEngagement: { value: 0.62, label: "互動率", unit: "Index" },
@@ -177,7 +176,7 @@ export default function WarRoomNayabnb() {
   const [range, setRange] = useState("30d");
   const [mode, setMode] = useState("overview");
   
-  // 新增：存放 API 抓回來的 Twitch 即時資料
+  // 存放 API 抓回來的 Twitch 即時資料
   const [twitchData, setTwitchData] = useState(null);
 
   useEffect(() => {
@@ -239,9 +238,16 @@ export default function WarRoomNayabnb() {
         {header}
         
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <MiniStat icon={TrendingUp} label={MOCK.kpis.subGrowthRate.label} value={`${Math.round(MOCK.kpis.subGrowthRate.value * 100)}%`} sub={MOCK.kpis.subGrowthRate.unit} />
           
-          {/* 動態更新的觀看人數卡片 */}
+          {/* 1. 動態更新的總追隨人數卡片 */}
+          <MiniStat 
+            icon={TrendingUp} 
+            label="總追隨人數" 
+            value={twitchData?.totalFollowers != null ? formatK(twitchData.totalFollowers) : "載入中..."} 
+            sub="Followers" 
+          />
+          
+          {/* 2. 動態更新的觀看人數卡片 */}
           <MiniStat 
             icon={Users} 
             label={viewersLabel} 
@@ -270,7 +276,7 @@ export default function WarRoomNayabnb() {
   );
 }
 
-// ---------- panels (與上一版相同) ----------
+// ---------- panels ----------
 function OverviewPanel({ trendData }) {
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
