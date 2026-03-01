@@ -16,7 +16,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ResponsiveContainer,
   LineChart,
@@ -84,10 +84,10 @@ const MOCK = {
   },
   kpis: {
     subGrowthRate: { value: 0.18, label: "訂閱成長率", unit: "MoM" },
-    avgConcurrent: { value: 315, label: "平均同時觀看", unit: "ACV" },
+    avgConcurrent: { value: 315, label: "平均同時觀看", unit: "ACV", warning: "本週微幅下滑 2%" },
     retentionProxy: { value: 0.56, label: "黏著指標", unit: "Proxy" },
     chatEngagement: { value: 0.62, label: "互動率", unit: "Index" },
-    monetization: { value: 0.48, label: "變現效率", unit: "Index" },
+    monetization: { value: 0.48, label: "變現效率", unit: "Index", warning: "過度依賴單一來源" },
   },
   traffic: [
     { name: "既有粉絲回流", value: 52 },
@@ -157,64 +157,71 @@ const MOCK = {
 function Card({ className = "", children }) {
   return (
     <div
-      className={
-        "rounded-2xl border border-neutral-200/70 bg-white/80 shadow-sm backdrop-blur " +
-        className
-      }
+      className={`rounded-2xl border border-neutral-200/70 bg-white/80 shadow-sm backdrop-blur ${className}`}
     >
       {children}
     </div>
   );
 }
+
 function CardHeader({ title, subtitle, right }) {
   return (
-    <div className="flex items-start justify-between gap-3 border-b border-neutral-200/70 p-4">
+    <div className="flex items-start justify-between gap-3 border-b border-neutral-100 p-4">
       <div>
         <div className="text-sm font-semibold text-neutral-900">{title}</div>
-        {subtitle ? <div className="mt-1 text-xs text-neutral-500">{subtitle}</div> : null}
+        {subtitle && <div className="mt-1 text-xs text-neutral-500">{subtitle}</div>}
       </div>
-      {right ? <div className="shrink-0">{right}</div> : null}
+      {right && <div className="shrink-0">{right}</div>}
     </div>
   );
 }
+
 function CardBody({ className = "", children }) {
-  return <div className={"p-4 " + className}>{children}</div>;
+  return <div className={`p-4 ${className}`}>{children}</div>;
 }
+
 function Pill({ icon: Icon, label }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200/70 bg-white px-3 py-1 text-xs text-neutral-700">
-      {Icon ? <Icon className="h-4 w-4 text-neutral-500" /> : null}
+    <div className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200/70 bg-white px-3 py-1 text-xs font-medium text-neutral-700 shadow-sm">
+      {Icon && <Icon className="h-3.5 w-3.5 text-neutral-500" />}
       <span>{label}</span>
     </div>
   );
 }
-// 修正 MiniStat 組件：加入對齊圖片的「注意」標示
-function MiniStat({ icon: Icon, label, value, sub }) {
+
+// 修正：拔除寫死的「注意」，改為可選的 warning 屬性傳入
+function MiniStat({ icon: Icon, label, value, sub, warning }) {
   return (
-    <Card className="p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <div className="rounded-xl border border-neutral-200/70 bg-neutral-50 p-2 mt-1">
-            <Icon className="h-5 w-5 text-neutral-700" />
+    <Card className="p-4 flex flex-col justify-center transition-all hover:shadow-md">
+      <div className="flex items-start gap-3">
+        <div className="rounded-xl border border-neutral-200/70 bg-neutral-50 p-2 shrink-0">
+          <Icon className="h-5 w-5 text-neutral-700" />
+        </div>
+        <div className="flex flex-col">
+          <div className="text-xs text-neutral-500 font-medium">{label}</div>
+          <div className="mt-1 flex items-baseline gap-1">
+            <span className="text-2xl font-bold text-neutral-900">{value}</span>
+            {sub && <span className="text-xs text-neutral-400">{sub}</span>}
           </div>
-          <div>
-            <div className="text-xs text-neutral-500">{label}</div>
-            <div className="mt-1 text-xl font-semibold text-neutral-900">{value}</div>
-            {sub ? <div className="mt-1 text-xs text-neutral-500">{sub}</div> : null}
-            <div className="mt-1 text-xs text-neutral-900">注意</div>
-          </div>
+          {warning && (
+            <div className="mt-2 inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 border border-amber-200/50">
+              <AlertTriangle className="h-3 w-3" />
+              {warning}
+            </div>
+          )}
         </div>
       </div>
     </Card>
   );
 }
+
 function Select({ value, onChange, options }) {
   return (
     <div className="relative">
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="appearance-none rounded-xl border border-neutral-200/70 bg-white px-3 py-2 pr-9 text-sm text-neutral-900 shadow-sm outline-none focus:border-neutral-300"
+        className="appearance-none rounded-xl border border-neutral-200/70 bg-white pl-4 pr-10 py-2 text-sm font-medium text-neutral-700 shadow-sm outline-none transition-colors hover:bg-neutral-50 focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100 cursor-pointer"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -222,7 +229,7 @@ function Select({ value, onChange, options }) {
           </option>
         ))}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
     </div>
   );
 }
@@ -231,11 +238,16 @@ const ScatterTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const d = payload[0].payload;
     return (
-      <div className="rounded-xl border border-neutral-200/70 bg-white p-2 text-xs shadow">
-        <div className="font-semibold text-neutral-900">{d.name}</div>
-        <div className="text-neutral-600">成長性：{d.x}</div>
-        <div className="text-neutral-600">穩定度：{d.y}</div>
-        <div className="text-neutral-600">占比：{d.z}%</div>
+      <div className="rounded-xl border border-neutral-200/70 bg-white p-3 text-xs shadow-lg backdrop-blur">
+        <div className="mb-2 font-bold text-neutral-900 border-b border-neutral-100 pb-1">{d.name}</div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <span className="text-neutral-500">成長性</span>
+          <span className="font-medium text-right text-neutral-900">{d.x}</span>
+          <span className="text-neutral-500">穩定度</span>
+          <span className="font-medium text-right text-neutral-900">{d.y}</span>
+          <span className="text-neutral-500">占比</span>
+          <span className="font-medium text-right text-neutral-900">{d.z}%</span>
+        </div>
       </div>
     );
   }
@@ -253,22 +265,22 @@ export default function WarRoomNayabnb() {
   }, [range]);
 
   const header = (
-    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div className="flex items-start gap-3">
+    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex items-start gap-4">
         <div className="rounded-2xl border border-neutral-200/70 bg-white p-3 shadow-sm">
           <LayoutDashboard className="h-6 w-6 text-neutral-900" />
         </div>
-        <div>
+        <div className="flex flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <div className="text-xl font-semibold text-neutral-950">
+            <h1 className="text-2xl font-bold tracking-tight text-neutral-950">
               戰情室｜{MOCK.channel.name}
-            </div>
+            </h1>
             <Pill icon={Target} label={`定位：${MOCK.channel.core}`} />
           </div>
-          <div className="mt-2 text-sm text-neutral-900 font-medium">{MOCK.channel.oneLiner}</div>
+          <div className="text-sm text-neutral-600 font-medium">{MOCK.channel.oneLiner}</div>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-3">
         <Select
           value={range}
           onChange={setRange}
@@ -294,27 +306,39 @@ export default function WarRoomNayabnb() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white p-4 md:p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <div className="min-h-screen bg-neutral-50 p-4 md:p-8 font-sans">
+      <div className="mx-auto max-w-7xl space-y-8">
         {header}
+        
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5"
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5"
         >
           <MiniStat icon={TrendingUp} label={MOCK.kpis.subGrowthRate.label} value={`${Math.round(MOCK.kpis.subGrowthRate.value * 100)}%`} sub={MOCK.kpis.subGrowthRate.unit} />
-          <MiniStat icon={Users} label={MOCK.kpis.avgConcurrent.label} value={formatK(MOCK.kpis.avgConcurrent.value)} sub={MOCK.kpis.avgConcurrent.unit} />
+          <MiniStat icon={Users} label={MOCK.kpis.avgConcurrent.label} value={formatK(MOCK.kpis.avgConcurrent.value)} sub={MOCK.kpis.avgConcurrent.unit} warning={MOCK.kpis.avgConcurrent.warning} />
           <MiniStat icon={Activity} label={MOCK.kpis.retentionProxy.label} value={`${Math.round(MOCK.kpis.retentionProxy.value * 100)}%`} sub={MOCK.kpis.retentionProxy.unit} />
           <MiniStat icon={Flame} label={MOCK.kpis.chatEngagement.label} value={`${Math.round(MOCK.kpis.chatEngagement.value * 100)}%`} sub={MOCK.kpis.chatEngagement.unit} />
-          <MiniStat icon={Wallet} label={MOCK.kpis.monetization.label} value={`${Math.round(MOCK.kpis.monetization.value * 100)}%`} sub={MOCK.kpis.monetization.unit} />
+          <MiniStat icon={Wallet} label={MOCK.kpis.monetization.label} value={`${Math.round(MOCK.kpis.monetization.value * 100)}%`} sub={MOCK.kpis.monetization.unit} warning={MOCK.kpis.monetization.warning} />
         </motion.div>
 
-        {mode === "overview" && <OverviewPanel trendData={trendData} />}
-        {mode === "traffic" && <TrafficPanel trendData={trendData} />}
-        {mode === "content" && <ContentPanel />}
-        {mode === "risks" && <RisksPanel />}
-        {mode === "plan" && <PlanPanel />}
+        {/* 加入面板切換動畫 */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={mode}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {mode === "overview" && <OverviewPanel trendData={trendData} />}
+            {mode === "traffic" && <TrafficPanel trendData={trendData} />}
+            {mode === "content" && <ContentPanel />}
+            {mode === "risks" && <RisksPanel />}
+            {mode === "plan" && <PlanPanel />}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -329,22 +353,22 @@ function OverviewPanel({ trendData }) {
           title="成長趨勢"
           subtitle="ACV（平均同時觀看）與追隨成長"
           right={
-            <div className="inline-flex items-center gap-2 rounded-xl border border-neutral-200/70 bg-white px-3 py-2 text-xs text-neutral-600">
-              <BarChart3 className="h-4 w-4" />
+            <div className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 py-1.5 text-xs font-medium text-neutral-600">
+              <BarChart3 className="h-3.5 w-3.5" />
               Trend
             </div>
           }
         />
         <CardBody className="h-[320px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={trendData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-              <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Line yAxisId="left" type="monotone" dataKey="acv" stroke="#1a1a1a" strokeWidth={2} dot={false} name="ACV" />
-              <Line yAxisId="right" type="monotone" dataKey="followers" stroke="#888888" strokeWidth={2} dot={false} name="新追蹤" />
+            <LineChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e5e5" />
+              <XAxis dataKey="day" tick={{ fontSize: 12, fill: '#737373' }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="left" tick={{ fontSize: 12, fill: '#737373' }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12, fill: '#737373' }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e5e5e5', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+              <Line yAxisId="left" type="monotone" dataKey="acv" stroke="#171717" strokeWidth={3} dot={false} activeDot={{ r: 6 }} name="ACV" />
+              <Line yAxisId="right" type="monotone" dataKey="followers" stroke="#a3a3a3" strokeWidth={2} dot={false} name="新追蹤" />
             </LineChart>
           </ResponsiveContainer>
         </CardBody>
@@ -352,18 +376,22 @@ function OverviewPanel({ trendData }) {
 
       <Card>
         <CardHeader title="指揮官判讀" subtitle="冷靜、可執行的戰情結論" right={<ShieldAlert className="h-4 w-4 text-neutral-500" />} />
-        <CardBody className="space-y-3">
-          <div className="rounded-2xl border border-neutral-200/70 bg-neutral-50 p-4 text-sm text-neutral-800">
-            <div className="font-semibold">核心判斷</div>
-            <div className="mt-2 leading-relaxed">
+        <CardBody className="space-y-4">
+          <div className="rounded-xl border border-neutral-200/70 bg-neutral-50 p-4 text-sm text-neutral-800 shadow-inner">
+            <div className="font-semibold text-neutral-900 flex items-center gap-2">
+              <Target className="w-4 h-4 text-blue-600" />
+              核心判斷
+            </div>
+            <div className="mt-3 leading-relaxed">
               {MOCK.channel.oneLiner}
-              <br />
-              <span className="text-neutral-600">建議優先順序：留存 → 外部導流 → 爆點企劃。</span>
+              <div className="mt-2 text-neutral-600 border-t border-neutral-200/70 pt-2">
+                建議優先順序：<span className="font-medium text-neutral-900">留存 → 外部導流 → 爆點企劃。</span>
+              </div>
             </div>
           </div>
-          <div className="rounded-2xl border border-neutral-200/70 bg-white p-4">
-            <div className="text-xs font-semibold text-neutral-500">本週優先任務</div>
-            <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-neutral-800">
+          <div className="rounded-xl border border-neutral-200/70 bg-white p-4">
+            <div className="text-xs font-bold tracking-wide text-neutral-500 uppercase">本週優先任務</div>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-neutral-800 marker:text-neutral-400">
               <li>固定直播開場鉤子（60 秒內交代目標＋今天亮點）</li>
               <li>挑 2 段可剪輯橋段：高張力/高情緒/高互動</li>
             </ul>
@@ -382,8 +410,8 @@ function TrafficPanel({ trendData }) {
         <CardBody className="h-[320px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Tooltip />
-              <Pie data={MOCK.traffic} dataKey="value" nameKey="name" outerRadius={110} label={({ name, percent }) => `${name} ${Math.round(percent * 100)}%`} labelLine={false}>
+              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e5e5e5' }} />
+              <Pie data={MOCK.traffic} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} label={({ name, percent }) => `${name} ${Math.round(percent * 100)}%`} labelLine={false} paddingAngle={2}>
                 {MOCK.traffic.map((_, idx) => (
                   <Cell key={idx} fill={PIE_COLORS_TRAFFIC[idx % PIE_COLORS_TRAFFIC.length]} />
                 ))}
@@ -397,12 +425,12 @@ function TrafficPanel({ trendData }) {
         <CardHeader title="外部導流與剪輯產量" subtitle="把『可被分享』做成固定工序" />
         <CardBody className="h-[320px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={trendData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Area type="monotone" dataKey="clips" stroke="#1a1a1a" strokeWidth={2} fill="#1a1a1a" fillOpacity={0.1} name="剪輯支數" />
+            <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e5e5" />
+              <XAxis dataKey="day" tick={{ fontSize: 12, fill: '#737373' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: '#737373' }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e5e5e5' }} />
+              <Area type="monotone" dataKey="clips" stroke="#171717" strokeWidth={2} fill="#171717" fillOpacity={0.05} name="剪輯支數" activeDot={{ r: 6 }} />
             </AreaChart>
           </ResponsiveContainer>
         </CardBody>
@@ -410,18 +438,18 @@ function TrafficPanel({ trendData }) {
 
       <Card className="xl:col-span-3">
         <CardHeader title="戰情結論" subtitle="如何優化成長結構" />
-        <CardBody className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border border-neutral-200/70 bg-neutral-50 p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900"><Target className="h-4 w-4" /> 問題定義</div>
-            <div className="mt-2 text-sm text-neutral-700">流量基數足夠，但缺乏高效率轉化結構。</div>
+        <CardBody className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="rounded-xl border border-neutral-200/70 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 text-sm font-bold text-neutral-900"><Target className="h-5 w-5 text-red-500" /> 問題定義</div>
+            <div className="mt-2 text-sm text-neutral-600 leading-relaxed">流量基數足夠，但缺乏高效率轉化結構。</div>
           </div>
-          <div className="rounded-2xl border border-neutral-200/70 bg-neutral-50 p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900"><Flame className="h-4 w-4" /> 破局手段</div>
-            <div className="mt-2 text-sm text-neutral-700">固定每週「可剪輯橋段」產線：賭注、挑戰、懲罰、里程碑儀式。</div>
+          <div className="rounded-xl border border-neutral-200/70 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 text-sm font-bold text-neutral-900"><Flame className="h-5 w-5 text-orange-500" /> 破局手段</div>
+            <div className="mt-2 text-sm text-neutral-600 leading-relaxed">固定每週「可剪輯橋段」產線：賭注、挑戰、懲罰、里程碑儀式。</div>
           </div>
-          <div className="rounded-2xl border border-neutral-200/70 bg-neutral-50 p-4">
-            <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900"><TrendingUp className="h-4 w-4" /> 成功指標</div>
-            <div className="mt-2 text-sm text-neutral-700">外部導流提升、剪輯帶來新觀眾，ACV 逐步抬升並更穩定。</div>
+          <div className="rounded-xl border border-neutral-200/70 bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-2 text-sm font-bold text-neutral-900"><TrendingUp className="h-5 w-5 text-green-500" /> 成功指標</div>
+            <div className="mt-2 text-sm text-neutral-600 leading-relaxed">外部導流提升、剪輯帶來新觀眾，ACV 逐步抬升並更穩定。</div>
           </div>
         </CardBody>
       </Card>
@@ -434,28 +462,23 @@ function ContentPanel() {
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <Card className="xl:col-span-2">
         <CardHeader title="內容貢獻矩陣" subtitle="X=成長性、Y=穩定度、泡泡大小=占比" />
-        <CardBody className="h-[360px]">
+        <CardBody className="h-[360px] flex flex-col">
           <ResponsiveContainer width="100%" height="100%">
-            <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" dataKey="x" name="成長性" domain={[0, 100]} tick={{ fontSize: 12 }} label={{ value: "成長性", position: "insideBottom", offset: -2, fontSize: 12 }} />
-              <YAxis type="number" dataKey="y" name="穩定度" domain={[0, 100]} tick={{ fontSize: 12 }} label={{ value: "穩定度", angle: -90, position: "insideLeft", fontSize: 12 }} />
-              <ZAxis type="number" dataKey="z" range={[60, 220]} name="占比" />
-              <Tooltip content={<ScatterTooltip />} />
+            <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+              <XAxis type="number" dataKey="x" name="成長性" domain={[0, 100]} tick={{ fontSize: 12, fill: '#737373' }} axisLine={false} tickLine={false} label={{ value: "← 成長性 →", position: "insideBottom", offset: -10, fontSize: 12, fill: '#737373' }} />
+              <YAxis type="number" dataKey="y" name="穩定度" domain={[0, 100]} tick={{ fontSize: 12, fill: '#737373' }} axisLine={false} tickLine={false} label={{ value: "穩定度", angle: -90, position: "insideLeft", fontSize: 12, fill: '#737373' }} />
+              <ZAxis type="number" dataKey="z" range={[100, 400]} name="占比" />
+              <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<ScatterTooltip />} />
               {MOCK.contentMatrix.map((d) => (
-                <Scatter
-                  key={d.name}
-                  name={d.name}
-                  data={[d]}
-                  fill={SCATTER_COLORS[d.name] ?? "#555555"}
-                />
+                <Scatter key={d.name} name={d.name} data={[d]} fill={SCATTER_COLORS[d.name] ?? "#555555"} fillOpacity={0.8} />
               ))}
             </ScatterChart>
           </ResponsiveContainer>
-          <div className="mt-2 flex flex-wrap gap-3 px-2">
+          <div className="mt-4 flex flex-wrap gap-4 px-4 justify-center">
             {MOCK.contentMatrix.map((d) => (
-              <div key={d.name} className="flex items-center gap-1.5 text-xs text-neutral-600">
-                <div className="h-3 w-3 rounded-full" style={{ background: SCATTER_COLORS[d.name] }} />
+              <div key={d.name} className="flex items-center gap-2 text-xs font-medium text-neutral-700">
+                <div className="h-3 w-3 rounded-full shadow-inner" style={{ background: SCATTER_COLORS[d.name] }} />
                 {d.name}
               </div>
             ))}
@@ -465,16 +488,16 @@ function ContentPanel() {
 
       <Card>
         <CardHeader title="內容結構占比" subtitle="把『企劃/剪輯』拉高，做成成長引擎" />
-        <CardBody className="space-y-3">
+        <CardBody className="space-y-4">
           {MOCK.contentMix.map((c) => (
-            <div key={c.type} className="rounded-2xl border border-neutral-200/70 bg-white p-4">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-neutral-900">{c.type}</div>
-                <div className="text-xs text-neutral-600">{c.share}%</div>
+            <div key={c.type} className="rounded-xl border border-neutral-100 bg-neutral-50 p-4 transition-colors hover:bg-neutral-100/50">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-sm font-bold text-neutral-900">{c.type}</div>
+                <div className="rounded bg-neutral-200 px-2 py-0.5 text-xs font-semibold text-neutral-700">{c.share}%</div>
               </div>
-              <div className="mt-3 space-y-2">
-                <Bar label="穩定度" value={c.stability} />
-                <Bar label="成長性" value={c.growth} />
+              <div className="space-y-3">
+                <Bar label="穩定度" value={c.stability} color="bg-neutral-800" />
+                <Bar label="成長性" value={c.growth} color="bg-neutral-400" />
               </div>
             </div>
           ))}
@@ -483,7 +506,7 @@ function ContentPanel() {
 
       <Card className="xl:col-span-3">
         <CardHeader title="內容調整建議" subtitle="留存 → 外部導流 → 爆點企劃" />
-        <CardBody className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <CardBody className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <AdviceBox icon={Target} title="守住基本盤" text="主力內容保持可預測節奏：固定時段、固定主題，降低觀眾認知成本。" />
           <AdviceBox icon={Flame} title="加上可剪輯橋段" text="每場直播安排 2–3 個『可被截短』的高張力節點：賭注、倒數、挑戰、懲罰。" />
           <AdviceBox icon={Crown} title="把梗做成IP" text="固定口頭禪/儀式/音效與視覺符號，讓新觀眾一眼記得你。" />
@@ -502,15 +525,15 @@ function RisksPanel() {
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
       <Card>
-        <CardHeader title="風險雷達" subtitle={`總風險：${riskScore}/100（越高越危險）`} />
+        <CardHeader title="風險雷達" subtitle={`整體風險指數：${riskScore}/100`} />
         <CardBody className="h-[340px]">
           <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={MOCK.risks}>
-              <PolarGrid />
-              <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12 }} />
-              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Radar dataKey="A" stroke="#1a1a1a" fill="#1a1a1a" strokeWidth={2} fillOpacity={0.2} />
+            <RadarChart data={MOCK.risks} cx="50%" cy="50%" outerRadius="70%">
+              <PolarGrid stroke="#e5e5e5" />
+              <PolarAngleAxis dataKey="subject" tick={{ fontSize: 12, fill: '#525252' }} />
+              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10, fill: '#a3a3a3' }} axisLine={false} />
+              <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e5e5e5' }} />
+              <Radar dataKey="A" stroke="#171717" fill="#171717" strokeWidth={2} fillOpacity={0.15} />
             </RadarChart>
           </ResponsiveContainer>
         </CardBody>
@@ -518,7 +541,7 @@ function RisksPanel() {
 
       <Card className="xl:col-span-2">
         <CardHeader title="風險處置清單" subtitle="用作戰手冊把風險變成流程" right={<AlertTriangle className="h-4 w-4 text-neutral-500" />} />
-        <CardBody className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <CardBody className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <RiskCard icon={AlertTriangle} title="內容疲乏" bullets={["每週新增 1 個小規則（賭注/挑戰）", "每月固定 1 次大企劃", "回顧最強片段，複用其結構"]} />
           <RiskCard icon={ShieldAlert} title="平台依賴" bullets={["剪輯短影片固定上架節奏", "社群貼文導流到直播", "建立 email/Discord 回流通道"]} />
           <RiskCard icon={Flame} title="情緒消耗" bullets={["設計低能耗節目：聊天/Q&A", "工作週期化（休息日固定）", "重大企劃前後留緩衝"]} />
@@ -527,13 +550,13 @@ function RisksPanel() {
       </Card>
 
       <Card className="xl:col-span-3">
-        <CardHeader title="變現結構" subtitle="檢查是否單一收入過度集中" right={<Wallet className="h-4 w-4 text-neutral-500" />} />
-        <CardBody className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="h-[260px]">
+        <CardHeader title="變現結構分析" subtitle="檢查是否單一收入過度集中" right={<Wallet className="h-4 w-4 text-neutral-500" />} />
+        <CardBody className="grid grid-cols-1 gap-6 md:grid-cols-2 items-center">
+          <div className="h-[280px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Tooltip />
-                <Pie data={MOCK.monetization} dataKey="value" nameKey="name" outerRadius={110} label={({ name, percent }) => `${name} ${Math.round(percent * 100)}%`} labelLine={false}>
+                <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #e5e5e5' }} />
+                <Pie data={MOCK.monetization} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={110} label={({ name, percent }) => `${name} ${Math.round(percent * 100)}%`} labelLine={false} paddingAngle={2}>
                   {MOCK.monetization.map((_, idx) => (
                     <Cell key={idx} fill={PIE_COLORS_MONETIZE[idx % PIE_COLORS_MONETIZE.length]} />
                   ))}
@@ -541,18 +564,19 @@ function RisksPanel() {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="space-y-3">
-            <div className="rounded-2xl border border-neutral-200/70 bg-neutral-50 p-4 text-sm text-neutral-800">
-              <div className="font-semibold">策略判讀</div>
-              <div className="mt-2 leading-relaxed text-neutral-700">
+          <div className="space-y-4">
+            <div className="rounded-xl border border-neutral-200/70 bg-neutral-50 p-5 text-sm shadow-inner">
+              <div className="font-bold text-neutral-900 flex items-center gap-2">
+                <Activity className="w-4 h-4" /> 策略判讀
+              </div>
+              <div className="mt-3 leading-relaxed text-neutral-700">
                 若「訂閱」佔比長期 &gt; 60%，頻道成長會被核心粉絲數量限制。
-                <br />
-                <span className="text-neutral-600">目標：把贊助/合作占比提升至 20% 以上，降低單一來源風險。</span>
+                <div className="mt-2 text-neutral-900 font-medium">目標：把贊助/合作占比提升至 20% 以上，降低單一來源風險。</div>
               </div>
             </div>
-            <div className="rounded-2xl border border-neutral-200/70 bg-white p-4">
-              <div className="text-xs font-semibold text-neutral-500">下一步（可立即執行）</div>
-              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-neutral-800">
+            <div className="rounded-xl border border-neutral-200/70 bg-white p-5 shadow-sm">
+              <div className="text-xs font-bold tracking-wide text-neutral-500 uppercase">下一步（可立即執行）</div>
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-neutral-800 marker:text-neutral-400">
                 <li>建立「合作提案一頁紙」：受眾、平均ACV、過往精華、合作形式</li>
                 <li>固定每月 2 次「可品牌置入」橋段（不突兀）</li>
                 <li>把精華剪輯做成「商業案例庫」</li>
@@ -568,21 +592,21 @@ function RisksPanel() {
 function PlanPanel() {
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-      {MOCK.phases.map((p) => (
-        <Card key={p.title}>
+      {MOCK.phases.map((p, index) => (
+        <Card key={p.title} className="flex flex-col">
           <CardHeader title={p.title} subtitle={p.goal} />
-          <CardBody className="space-y-3">
-            <div className="rounded-2xl border border-neutral-200/70 bg-neutral-50 p-4">
-              <div className="text-xs font-semibold text-neutral-500">行動</div>
-              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-neutral-800">
+          <CardBody className="space-y-4 flex-1 flex flex-col">
+            <div className="rounded-xl border border-neutral-200/70 bg-neutral-50 p-4 flex-1">
+              <div className="text-xs font-bold tracking-wide text-neutral-500 uppercase">行動目標</div>
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-neutral-800 marker:text-neutral-400">
                 {p.bullets.map((b, idx) => <li key={idx}>{b}</li>)}
               </ul>
             </div>
-            <div className="rounded-2xl border border-neutral-200/70 bg-white p-4">
-              <div className="text-xs font-semibold text-neutral-500">KPI</div>
-              <div className="mt-2 flex flex-wrap gap-2">
+            <div className="rounded-xl border border-neutral-200/70 bg-white p-4">
+              <div className="text-xs font-bold tracking-wide text-neutral-500 uppercase mb-3">預期 KPI</div>
+              <div className="flex flex-wrap gap-2">
                 {p.kpi.map((k) => (
-                  <span key={k} className="rounded-full border border-neutral-200/70 bg-neutral-50 px-3 py-1 text-xs text-neutral-700">{k}</span>
+                  <span key={k} className="rounded-md border border-neutral-200/70 bg-neutral-50 px-2.5 py-1 text-xs font-medium text-neutral-700">{k}</span>
                 ))}
               </div>
             </div>
@@ -592,7 +616,7 @@ function PlanPanel() {
 
       <Card className="xl:col-span-3">
         <CardHeader title="本週作戰排程（建議）" subtitle="把抽象戰略變成日程與產線" />
-        <CardBody className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <CardBody className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
           <ScheduleDay day="Mon" title="剪輯產線" items={["挑片段", "列出3個鉤子", "出1支短剪"]} />
           <ScheduleDay day="Wed" title="直播爆點" items={["挑戰/賭注", "里程碑儀式", "觀眾投票"]} />
           <ScheduleDay day="Fri" title="合作推進" items={["聯絡2位", "對齊主題", "定下時間"]} />
@@ -604,15 +628,15 @@ function PlanPanel() {
 }
 
 // ---------- small components ----------
-function Bar({ label, value }) {
+function Bar({ label, value, color = "bg-neutral-800" }) {
   return (
     <div>
-      <div className="flex items-center justify-between text-xs text-neutral-600">
+      <div className="flex items-center justify-between text-xs font-medium text-neutral-600 mb-1.5">
         <span>{label}</span>
         <span>{value}</span>
       </div>
-      <div className="mt-1 h-2 w-full rounded-full bg-neutral-100">
-        <div className="h-2 rounded-full bg-neutral-900/70" style={{ width: `${clamp(value, 0, 100)}%` }} />
+      <div className="h-2 w-full rounded-full bg-neutral-200 overflow-hidden">
+        <div className={`h-full rounded-full ${color} transition-all duration-500`} style={{ width: `${clamp(value, 0, 100)}%` }} />
       </div>
     </div>
   );
@@ -620,24 +644,26 @@ function Bar({ label, value }) {
 
 function AdviceBox({ icon: Icon, title, text }) {
   return (
-    <div className="rounded-2xl border border-neutral-200/70 bg-neutral-50 p-4">
-      <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
-        <Icon className="h-4 w-4" />
+    <div className="rounded-xl border border-neutral-200/70 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex items-center gap-2 text-sm font-bold text-neutral-900">
+        <div className="p-1.5 bg-neutral-100 rounded-lg">
+           <Icon className="h-4 w-4 text-neutral-700" />
+        </div>
         {title}
       </div>
-      <div className="mt-2 text-sm text-neutral-700">{text}</div>
+      <div className="mt-3 text-sm text-neutral-600 leading-relaxed">{text}</div>
     </div>
   );
 }
 
 function RiskCard({ icon: Icon, title, bullets }) {
   return (
-    <div className="rounded-2xl border border-neutral-200/70 bg-white p-4">
-      <div className="flex items-center gap-2 text-sm font-semibold text-neutral-900">
-        <Icon className="h-4 w-4 text-neutral-700" />
+    <div className="rounded-xl border border-neutral-200/70 bg-white p-5 shadow-sm">
+      <div className="flex items-center gap-2 text-sm font-bold text-neutral-900">
+        <Icon className="h-4 w-4 text-neutral-600" />
         {title}
       </div>
-      <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-neutral-800">
+      <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-neutral-600 marker:text-neutral-400">
         {bullets.map((b, idx) => <li key={idx}>{b}</li>)}
       </ul>
     </div>
@@ -646,14 +672,16 @@ function RiskCard({ icon: Icon, title, bullets }) {
 
 function ScheduleDay({ day, title, items }) {
   return (
-    <div className="rounded-2xl border border-neutral-200/70 bg-white p-4">
-      <div className="flex items-center justify-between">
-        <div className="text-sm font-semibold text-neutral-900">{day}</div>
-        <div className="text-xs text-neutral-500">{title}</div>
+    <div className="rounded-xl border border-neutral-200/70 bg-neutral-50 p-4">
+      <div className="flex items-center justify-between mb-4 border-b border-neutral-200 pb-2">
+        <div className="text-sm font-black tracking-wider text-neutral-900 uppercase">{day}</div>
+        <div className="text-xs font-medium text-neutral-500">{title}</div>
       </div>
-      <ul className="mt-3 space-y-2 text-sm text-neutral-800">
+      <ul className="space-y-2 text-sm text-neutral-700">
         {items.map((it, idx) => (
-          <li key={idx} className="rounded-xl border border-neutral-200/70 bg-neutral-50 px-3 py-2">{it}</li>
+          <li key={idx} className="rounded-lg border border-neutral-100 bg-white px-3 py-2 shadow-sm flex items-center before:content-[''] before:w-1.5 before:h-1.5 before:bg-neutral-300 before:rounded-full before:mr-2">
+            {it}
+          </li>
         ))}
       </ul>
     </div>
