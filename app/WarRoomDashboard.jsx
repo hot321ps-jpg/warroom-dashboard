@@ -67,10 +67,11 @@ const RANGE_MAP = { "7d": 7, "30d": 30, "90d": 90 };
 const MOCK = {
   channel: { name: "nayabnb", platform: "Twitch", stage: "成長期中段", core: "陪伴型互動＋主力遊戲", oneLiner: "目前不是流量問題，而是成長結構尚未爆發。" },
   kpis: {
-    avgConcurrent: { value: 315, label: "歷史平均觀看", unit: "ACV" }, // 預設值
+    avgConcurrent: { value: 315, label: "歷史平均觀看", unit: "ACV" },
     retentionProxy: { value: 0.56, label: "黏著指標", unit: "Proxy" },
     chatEngagement: { value: 0.62, label: "互動率", unit: "Index" },
     monetization: { value: 0.48, label: "變現效率", unit: "Index", warning: "過度依賴單一來源" },
+    subGrowthRate: { value: 0.18, label: "訂閱成長率", unit: "MoM" }, // 從靜態版整併過來的指標
   },
   traffic: [{ name: "既有粉絲回流", value: 52 }, { name: "平台推薦", value: 33 }, { name: "外部導流", value: 15 }],
   contentMix: [
@@ -88,9 +89,37 @@ const MOCK = {
     { subject: "競爭模仿", A: 55 }, { subject: "成長天花板", A: 70 },
   ],
   monetization: [{ name: "訂閱", value: 55 }, { name: "打賞", value: 22 }, { name: "廣告", value: 13 }, { name: "贊助/合作", value: 10 }],
-  phases: [
-    { title: "Phase 1｜穩定基本盤", goal: "提高新觀眾滲透率＋留存", bullets: ["固定主力內容", "每週至少 2 支精華", "開場 60 秒鉤子模板"], kpi: ["留存 +5%", "外部導流 +20%"] },
-    { title: "Phase 2｜製造爆點", goal: "建立談資與話題事件", bullets: ["月度挑戰企劃", "設計可剪輯橋段", "同量級合作串台"], kpi: ["爆款剪輯 ≥2/月", "新觀眾 +15%"] },
+  phases: [ // 整合了靜態版更完整的時間軸與 Phase 3 規劃
+    {
+      title: "Phase 1｜穩定基本盤（1–2個月）",
+      goal: "提高新觀眾滲透率＋留存",
+      bullets: [
+        "固定主力內容（避免頻繁換主題）",
+        "每週至少 2 支精華剪輯（高密度笑點/衝突點）",
+        "直播前 60 秒開場固定模板：主題 → 今天目標 → 鉤子事件",
+      ],
+      kpi: ["留存 +5~10%", "外部導流 +20%", "ACV 穩定上行"],
+    },
+    {
+      title: "Phase 2｜製造爆點（3–6個月）",
+      goal: "建立談資與話題事件",
+      bullets: [
+        "月度企劃：連續挑戰 / 觀眾投票路線 / 連動串台",
+        "設計『可剪輯』橋段：關卡賭注、懲罰、里程碑儀式感",
+        "合作名單分級：同量級 70%＋上位曝光 30%",
+      ],
+      kpi: ["爆款剪輯 ≥2/月", "新觀眾占比 +15%", "合作導流 +30%"],
+    },
+    {
+      title: "Phase 3｜品牌化（6–12個月）",
+      goal: "IP 固化與可複製變現",
+      bullets: [
+        "建立專屬口頭禪/儀式、視覺標識、固定音效",
+        "開啟商品化測試：貼圖、週邊、小額會員福利",
+        "社群文化規則：新手歡迎、內梗字典、回流機制",
+      ],
+      kpi: ["合作/贊助占比 ≥20%", "會員留存提升", "品牌搜尋量上升"],
+    },
   ],
 };
 
@@ -132,7 +161,7 @@ function MiniStat({ icon: Icon, label, value, sub, warning, pulseHighlight }) {
           <div className="text-xs text-neutral-500 font-medium">{label}</div>
           <div className="mt-1 flex items-baseline gap-1">
             <span className="text-2xl font-bold text-neutral-900">{value}</span>
-            {sub && <span className={`text-xs ${pulseHighlight ? 'text-red-500 font-semibold' : 'text-neutral-400'}`}>{sub}</span>}
+            {sub && <span className={`ml-1 text-xs ${pulseHighlight ? 'text-red-500 font-semibold' : 'text-neutral-400'}`}>{sub}</span>}
           </div>
           {warning && (
             <div className="mt-2 inline-flex items-center gap-1 rounded bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 border border-amber-200/50">
@@ -237,7 +266,8 @@ export default function WarRoomNayabnb() {
       <div className="mx-auto max-w-7xl space-y-8">
         {header}
         
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        {/* 調整 Grid 讓 6 個指標能完美適應不同螢幕大小 */}
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
           
           {/* 1. 動態更新的總追隨人數卡片 */}
           <MiniStat 
@@ -260,6 +290,7 @@ export default function WarRoomNayabnb() {
           <MiniStat icon={Activity} label={MOCK.kpis.retentionProxy.label} value={`${Math.round(MOCK.kpis.retentionProxy.value * 100)}%`} sub={MOCK.kpis.retentionProxy.unit} />
           <MiniStat icon={Flame} label={MOCK.kpis.chatEngagement.label} value={`${Math.round(MOCK.kpis.chatEngagement.value * 100)}%`} sub={MOCK.kpis.chatEngagement.unit} />
           <MiniStat icon={Wallet} label={MOCK.kpis.monetization.label} value={`${Math.round(MOCK.kpis.monetization.value * 100)}%`} sub={MOCK.kpis.monetization.unit} warning={MOCK.kpis.monetization.warning} />
+          <MiniStat icon={Crown} label={MOCK.kpis.subGrowthRate.label} value={`+${Math.round(MOCK.kpis.subGrowthRate.value * 100)}%`} sub={MOCK.kpis.subGrowthRate.unit} />
         </motion.div>
 
         <AnimatePresence mode="wait">
